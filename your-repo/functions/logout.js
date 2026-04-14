@@ -1,8 +1,6 @@
-// functions/logout.js
 export async function onRequest(context) {
     const { request, env } = context;
     
-    // 获取 token 并删除
     const cookie = request.headers.get('Cookie') || '';
     const match = cookie.match(/admin_token=([^;]+)/);
     if (match) {
