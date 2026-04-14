@@ -1,4 +1,4 @@
-export async function onRequestGet({ request, env }) {
+export async function onRequestPost({ request, env }) {
     const cookie = request.headers.get('Cookie') || '';
     const match = cookie.match(/admin_token=([^;]+)/);
     if (match) {
