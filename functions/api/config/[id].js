@@ -1,13 +1,10 @@
-// functions/api/config/[id].js - 使用动态路由参数
 export async function onRequest({ request, env, params }) {
     const method = request.method;
     
-    // 直接从 params 获取 id
-    const id = parseInt(params.id);
-    
-    // 只处理 DELETE 请求
     if (method === 'DELETE') {
         try {
+            const id = parseInt(params.id);
+            
             let sites = [];
             const data = await NAV_KV.get('sites');
             if (data) sites = JSON.parse(data);
