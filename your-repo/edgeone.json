@@ -2,8 +2,12 @@
   "functions": {
     "routes": [
       {
-        "pattern": "/*",
-        "function": "[[path]].js"
+        "pattern": "/",
+        "function": "index"
+      },
+      {
+        "pattern": "/admin",
+        "function": "admin"
       }
     ]
   }
