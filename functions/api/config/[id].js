@@ -1,14 +1,13 @@
-// functions/api/config/[id].js - 处理 /api/config/1, /api/config/2 等
-export async function onRequest({ request, env }) {
-    const url = new URL(request.url);
+// functions/api/config/[id].js - 使用动态路由参数
+export async function onRequest({ request, env, params }) {
     const method = request.method;
+    
+    // 直接从 params 获取 id
+    const id = parseInt(params.id);
     
     // 只处理 DELETE 请求
     if (method === 'DELETE') {
         try {
-            // 从路径中获取 ID，例如 /api/config/1 中的 1
-            const id = parseInt(url.pathname.split('/').pop());
-            
             let sites = [];
             const data = await NAV_KV.get('sites');
             if (data) sites = JSON.parse(data);
