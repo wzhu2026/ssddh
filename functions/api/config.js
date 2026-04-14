@@ -32,6 +32,9 @@ export async function onRequestDelete({ request, env }) {
     const url = new URL(request.url);
     const id = parseInt(url.pathname.split('/').pop());
     
+    // 添加日志
+    console.log('删除 ID:', id);
+    
     let sites = [];
     const data = await NAV_KV.get('sites');
     if (data) sites = JSON.parse(data);
