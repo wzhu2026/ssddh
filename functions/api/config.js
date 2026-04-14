@@ -1,6 +1,5 @@
-// functions/api/config.js - 使用 onRequest 统一处理所有方法
+// functions/api/config.js - 处理 /api/config
 export async function onRequest({ request, env }) {
-    const url = new URL(request.url);
     const method = request.method;
     
     // GET - 获取所有书签
@@ -19,37 +18,23 @@ export async function onRequest({ request, env }) {
     if (method === 'POST') {
         try {
             const body = await request.json();
-            const { name, url: siteUrl, catelog } = body;
+            const { name, url, catelog } = body;
             
             let sites = [];
             const data = await NAV_KV.get('sites');
             if (data) sites = JSON.parse(data);
             
             const newId = sites.length ? Math.max(...sites.map(s => s.id)) + 1 : 1;
-            sites.unshift({ id: newId, name, url: siteUrl, catelog: catelog || '未分类' });
+            sites.unshift({ id: newId, name, url, catelog: catelog || '未分类' });
             await NAV_KV.put('sites', JSON.stringify(sites));
             
-            return new Response(JSON.stringify({ code: 201, message: '创建成功' }));
+            return new Response(JSON.stringify({ code: 201, message: '创建成功' }), {
+                headers: { 'Content-Type': 'application/json' }
+            });
         } catch (e) {
-            return new Response(JSON.stringify({ code: 500, message: e.message }));
-        }
-    }
-    
-    // DELETE - 删除书签
-    if (method === 'DELETE') {
-        try {
-            const id = parseInt(url.pathname.split('/').pop());
-            
-            let sites = [];
-            const data = await NAV_KV.get('sites');
-            if (data) sites = JSON.parse(data);
-            
-            const newSites = sites.filter(s => s.id !== id);
-            await NAV_KV.put('sites', JSON.stringify(newSites));
-            
-            return new Response(JSON.stringify({ code: 200, message: '删除成功' }));
-        } catch (e) {
-            return new Response(JSON.stringify({ code: 500, message: e.message }));
+            return new Response(JSON.stringify({ code: 500, message: e.message }), {
+                headers: { 'Content-Type': 'application/json' }
+            });
         }
     }
     
