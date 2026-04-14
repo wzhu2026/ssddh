@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "routes": [
+      {
+        "pattern": "/*",
+        "function": "[[path]].js"
+      }
+    ]
+  }
+}
