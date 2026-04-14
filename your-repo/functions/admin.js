@@ -1,9 +1,6 @@
-// functions/admin.js
 export async function onRequest(context) {
     const { request, env } = context;
-    const url = new URL(request.url);
     
-    // 解析 Cookie
     function parseCookies(cookieHeader) {
         const cookies = {};
         if (!cookieHeader) return cookies;
@@ -14,7 +11,6 @@ export async function onRequest(context) {
         return cookies;
     }
     
-    // 检查登录
     async function isAuthenticated() {
         const cookies = parseCookies(request.headers.get('Cookie') || '');
         const token = cookies['admin_token'];
@@ -23,7 +19,6 @@ export async function onRequest(context) {
         return session !== null;
     }
     
-    // 处理登录 POST
     if (request.method === 'POST') {
         const form = await request.formData();
         const username = form.get('username');
@@ -49,7 +44,6 @@ export async function onRequest(context) {
         });
     }
     
-    // GET 请求 - 检查登录状态
     const authenticated = await isAuthenticated();
     
     if (!authenticated) {
@@ -75,7 +69,6 @@ button{width:100%;padding:10px;background:#667eea;color:white;border:none;border
         });
     }
     
-    // 已登录 - 显示后台
     return new Response(`<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><title>后台管理</title>
 <style>
@@ -97,7 +90,7 @@ th,td{padding:10px;border-bottom:1px solid #eee;}
 <div class="card"><h3>书签列表</h3><div id="list"></div></div>
 </div>
 <script>
-async function load(){const r=await fetch('/api/config'),d=await r.json();if(d.code===200){const h=document.getElementById('list');h.innerHTML='<table><thead><tr><th>名称</th><th>网址</th><th>分类</th><th>操作</th></tr></thead><tbody id="tbody"></tbody></table>';const t=document.getElementById('tbody');t.innerHTML='';d.data.forEach(s=>{const r=t.insertRow();r.insertCell(0).innerHTML='<strong>'+escapeHtml(s.name)+'</strong>';r.insertCell(1).innerHTML='<a href="'+s.url+'" target="_blank">'+s.url.substring(0,40)+'</a>';r.insertCell(2).innerHTML=escapeHtml(s.catelog||'未分类');const a=r.insertCell(3),d=document.createElement('button');d.textContent='删除';d.onclick=()=>deleteSite(s.id);a.appendChild(d);})}}
+async function load(){const r=await fetch('/api/config'),d=await r.json();if(d.code===200){const h=document.getElementById('list');h.innerHTML='</table><thead><tr><th>名称</th><th>网址</th><th>分类</th><th>操作</th></tr></thead><tbody id="tbody"></tbody></table>';const t=document.getElementById('tbody');t.innerHTML='';d.data.forEach(s=>{const r=t.insertRow();r.insertCell(0).innerHTML='<strong>'+escapeHtml(s.name)+'</strong>';r.insertCell(1).innerHTML='<a href="'+s.url+'" target="_blank">'+s.url.substring(0,40)+'</a>';r.insertCell(2).innerHTML=escapeHtml(s.catelog||'未分类');const a=r.insertCell(3),d=document.createElement('button');d.textContent='删除';d.onclick=()=>deleteSite(s.id);a.appendChild(d);})}}
 async function deleteSite(id){if(confirm('确定删除？')){await fetch('/api/config/'+id,{method:'DELETE'});load();}}
 function escapeHtml(s){if(!s)return '';return s.replace(/[&<>]/g,function(m){if(m==='&')return '&amp;';if(m==='<')return '&lt;';if(m==='>')return '&gt;';return m;});}
 document.getElementById('addForm').onsubmit=async e=>{e.preventDefault();const data={name:document.getElementById('name').value,url:document.getElementById('url').value,catelog:document.getElementById('catelog').value};const r=await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const d=await r.json();if(d.code===201){document.getElementById('addForm').reset();load();document.getElementById('msg').innerHTML='<span style="color:green;">添加成功</span>';setTimeout(()=>document.getElementById('msg').innerHTML='',2000);}else{document.getElementById('msg').innerHTML='<span style="color:red;">添加失败</span>';}};
