@@ -1,6 +1,6 @@
-// functions/[[path]].js - EdgeOne Pages 标准格式
+// functions/[[path]].js - 修正 KV 访问方式
 export async function onRequest(context) {
-    const { request, env } = context;
+    const { request } = context;
     const url = new URL(request.url);
     const pathname = url.pathname;
     
@@ -25,10 +25,10 @@ export async function onRequest(context) {
         return cookies;
     }
     
-    // ========== KV 操作 ==========
+    // ========== KV 操作（直接使用 NAV_KV，不是 env.NAV_KV） ==========
     async function getSites() {
         try {
-            const data = await env.NAV_KV.get('sites');
+            const data = await NAV_KV.get('sites');
             return data ? JSON.parse(data) : [];
         } catch (e) {
             return [];
@@ -39,15 +39,43 @@ export async function onRequest(context) {
         const sites = await getSites();
         const newId = sites.length ? Math.max(...sites.map(s => s.id)) + 1 : 1;
         sites.unshift({ id: newId, ...site });
-        await env.NAV_KV.put('sites', JSON.stringify(sites));
+        await NAV_KV.put('sites', JSON.stringify(sites));
         return newId;
     }
     
     async function deleteSite(id) {
         const sites = await getSites();
         const newSites = sites.filter(s => s.id != id);
-        await env.NAV_KV.put('sites', JSON.stringify(newSites));
+        await NAV_KV.put('sites', JSON.stringify(newSites));
         return true;
+    }
+    
+    async function getAdminUser() {
+        try {
+            return await NAV_KV.get('admin_username') || 'admin';
+        } catch (e) {
+            return 'admin';
+        }
+    }
+    
+    async function getAdminPass() {
+        try {
+            return await NAV_KV.get('admin_password') || 'admin123';
+        } catch (e) {
+            return 'admin123';
+        }
+    }
+    
+    async function createSession(token) {
+        await NAV_KV.put(`session:${token}`, 'active', { expirationTtl: 86400 });
+    }
+    
+    async function getSession(token) {
+        return await NAV_KV.get(`session:${token}`);
+    }
+    
+    async function deleteSession(token) {
+        await NAV_KV.delete(`session:${token}`);
     }
     
     // ========== API 路由 ==========
@@ -80,6 +108,11 @@ export async function onRequest(context) {
     
     // ========== 退出登录 ==========
     if (pathname === '/logout') {
+        const cookie = request.headers.get('Cookie') || '';
+        const match = cookie.match(/admin_token=([^;]+)/);
+        if (match) {
+            await deleteSession(match[1]);
+        }
         return new Response(null, {
             status: 302,
             headers: {
@@ -97,12 +130,12 @@ export async function onRequest(context) {
             const username = form.get('username');
             const password = form.get('password');
             
-            const adminUser = await env.NAV_KV.get('admin_username') || 'admin';
-            const adminPass = await env.NAV_KV.get('admin_password') || 'admin123';
+            const adminUser = await getAdminUser();
+            const adminPass = await getAdminPass();
             
             if (username === adminUser && password === adminPass) {
                 const token = crypto.randomUUID();
-                await env.NAV_KV.put(`session:${token}`, 'active', { expirationTtl: 86400 });
+                await createSession(token);
                 
                 return new Response(null, {
                     status: 302,
@@ -123,7 +156,7 @@ export async function onRequest(context) {
         let isLoggedIn = false;
         
         if (token) {
-            const session = await env.NAV_KV.get(`session:${token}`);
+            const session = await getSession(token);
             isLoggedIn = session !== null;
         }
         
@@ -160,7 +193,7 @@ body{font-family:system-ui;background:#f5f5f5;padding:20px;}
 .header{background:#667eea;color:white;padding:15px;border-radius:10px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;}
 .card{background:white;border-radius:10px;padding:20px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,0.1);}
 .card h3{margin-bottom:15px;}
-input,textarea{width:100%;padding:10px;margin:5px 0 15px;border:1px solid #ddd;border-radius:5px;}
+input{width:100%;padding:10px;margin:5px 0 15px;border:1px solid #ddd;border-radius:5px;}
 button{background:#667eea;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;}
 table{width:100%;border-collapse:collapse;}
 th,td{padding:10px;text-align:left;border-bottom:1px solid #eee;}
