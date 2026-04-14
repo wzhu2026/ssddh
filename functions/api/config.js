@@ -1,3 +1,4 @@
+// functions/api/config.js - 完整版
 export async function onRequestGet({ env }) {
     let sites = [];
     try {
@@ -28,19 +29,21 @@ export async function onRequestPost({ request, env }) {
     }
 }
 
+// 关键：导出 onRequestDelete
 export async function onRequestDelete({ request, env }) {
-    const url = new URL(request.url);
-    const id = parseInt(url.pathname.split('/').pop());
-    
-    // 添加日志
-    console.log('删除 ID:', id);
-    
-    let sites = [];
-    const data = await NAV_KV.get('sites');
-    if (data) sites = JSON.parse(data);
-    
-    const newSites = sites.filter(s => s.id !== id);
-    await NAV_KV.put('sites', JSON.stringify(newSites));
-    
-    return new Response(JSON.stringify({ code: 200, message: '删除成功' }));
+    try {
+        const url = new URL(request.url);
+        const id = parseInt(url.pathname.split('/').pop());
+        
+        let sites = [];
+        const data = await NAV_KV.get('sites');
+        if (data) sites = JSON.parse(data);
+        
+        const newSites = sites.filter(s => s.id !== id);
+        await NAV_KV.put('sites', JSON.stringify(newSites));
+        
+        return new Response(JSON.stringify({ code: 200, message: '删除成功' }));
+    } catch (e) {
+        return new Response(JSON.stringify({ code: 500, message: e.message }));
+    }
 }
