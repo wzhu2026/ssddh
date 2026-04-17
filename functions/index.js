@@ -168,7 +168,18 @@ export async function onRequest({ env, request }) {
 async function getSites(env) {
     try {
         const data = await NAV_KV.get('sites');
-        return data ? JSON.parse(data) : [];
+        if (data) {
+            const sites = JSON.parse(data);
+            // 按sort_order升序排序
+            sites.sort((a, b) => {
+                const orderA = a.sort_order !== undefined ? a.sort_order : 9999;
+                const orderB = b.sort_order !== undefined ? b.sort_order : 9999;
+                if (orderA !== orderB) return orderA - orderB;
+                return b.id - a.id;
+            });
+            return sites;
+        }
+        return [];
     } catch (e) {
         return [];
     }
