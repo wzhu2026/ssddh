@@ -18,31 +18,31 @@
 
 根目录/functions
 
-  ├── admin.js
+  admin.js
   
-  ├── logout.js
+  logout.js
   
-  ├── index.js
+  index.js
   
   /api
   
 根目录/functions/api
 
-    ├── config.js
+    config.js
 
-    ├── logo.js
+    logo.js
     
-    ├── logo-link.js
+    logo-link.js
     
 根目录/functions/api/config
 
-      ├── [id].js
+    [id].js
       
 环境变量配置：
 
 添加 KV 绑定：NAV_KV（需要先在 EdgeOne 创建 KV 存储）
 
-创建 KV 命名空间：NAV_KV
+创建 KV 命名空间：NAV_KV（必须是这个名称，因为代码里写死了这个，你也可以自行在代码里修改）
 
 部署步骤：
 
@@ -57,6 +57,14 @@
 部署成功后，会获得一个预览域名（如 xxx.edgeone.app）
 
 访问 /admin 进行登录（默认账号：admin，密码：admin123）
+
+然后添加自定义域名  
+
+避坑  无论什么域名，一定要拥有绝对控制权，否则无法验证，
+
+例如：xxxx.us.kg  你需要拥有us.kg的控制权才行
+
+可选：预先添加一些示例数据（通过后台管理界面添加）
 
 # 方式二：通过 Git 部署
 
@@ -78,7 +86,9 @@
 
 在 EdgeOne Pages 控制台中，需要先创建 KV 存储：
 
-进入 EdgeOne Pages → 你的项目 → KV 存储
+进入 EdgeOne Pages → 你的项目 → KV 存储  绑定
+
+可选：预先添加一些示例数据（通过后台管理界面添加）
 
 修改密码
 
@@ -113,6 +123,7 @@ Key: admin_username
 Value: 新的用户名
 
 安全建议
+
 首次登录后立即修改默认密码
 
 使用强密码（至少8位，包含字母+数字）
@@ -120,6 +131,5 @@ Value: 新的用户名
 定期更换密码
 
 这样你就可以在后台界面直接修改密码，无需通过 KV 控制台操作了。
-创建 KV 命名空间：NAV_KV
 
-可选：预先添加一些示例数据（通过后台管理界面添加）
+
