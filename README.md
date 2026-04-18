@@ -16,20 +16,33 @@
 
 文件结构（保持原有结构）：
 
-text
-/functions
+根目录/functions
+
   ├── admin.js
-  ├── logout.js
-  /api
-    ├── config.js
-    ├── [id].js
-    ├── logo.js
-    ├── logo-link.js
-  /index.js
   
+  ├── logout.js
+  
+  ├── index.js
+  
+  /api
+  
+根目录/functions/api
+
+    ├── config.js
+
+    ├── logo.js
+    
+    ├── logo-link.js
+    
+根目录/functions/api/config
+
+      ├── [id].js
+      
 环境变量配置：
 
 添加 KV 绑定：NAV_KV（需要先在 EdgeOne 创建 KV 存储）
+
+创建 KV 命名空间：NAV_KV
 
 部署步骤：
 
@@ -60,10 +73,53 @@ text
 点击部署
 
 初始化 KV 存储（重要）
+
+创建 KV 命名空间：NAV_KV
+
 在 EdgeOne Pages 控制台中，需要先创建 KV 存储：
 
 进入 EdgeOne Pages → 你的项目 → KV 存储
 
+修改密码
+
+登录后台：访问 /admin，输入账号密码（默认：admin / admin123）
+
+修改密码：
+
+点击右上角的「修改密码」按钮
+
+输入原密码和新密码
+
+确认修改后会自动退出登录，需要用新密码重新登录
+
+其他管理方式（通过 KV 直接修改）
+
+如果忘记密码，也可以通过 EdgeOne Pages 控制台直接修改 KV 中的密码：
+
+进入项目 → KV 存储
+
+找到 NAV_KV 命名空间
+
+编辑键值对：
+
+Key: admin_password
+
+Value: 你想要的新密码
+
+或者修改用户名：
+
+Key: admin_username
+
+Value: 新的用户名
+
+安全建议
+首次登录后立即修改默认密码
+
+使用强密码（至少8位，包含字母+数字）
+
+定期更换密码
+
+这样你就可以在后台界面直接修改密码，无需通过 KV 控制台操作了。
 创建 KV 命名空间：NAV_KV
 
 可选：预先添加一些示例数据（通过后台管理界面添加）
