@@ -10,6 +10,39 @@ export async function onRequest({ request, env }) {
     
     // 处理登录 POST
     if (request.method === 'POST') {
+        // 检查是否是修改密码的请求
+        const url = new URL(request.url);
+        if (url.pathname === '/admin/change-password') {
+            const cookie = request.headers.get('Cookie') || '';
+            const match = cookie.match(/admin_token=([^;]+)/);
+            if (match) {
+                const session = await NAV_KV.get(`session:${match[1]}`);
+                if (session) {
+                    const form = await request.formData();
+                    const oldPassword = form.get('old_password');
+                    const newPassword = form.get('new_password');
+                    
+                    const adminUser = await NAV_KV.get('admin_username') || 'admin';
+                    const adminPass = await NAV_KV.get('admin_password') || 'admin123';
+                    
+                    if (oldPassword === adminPass) {
+                        await NAV_KV.put('admin_password', newPassword);
+                        return new Response(JSON.stringify({ code: 200, message: '密码修改成功，请重新登录' }), {
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                    } else {
+                        return new Response(JSON.stringify({ code: 401, message: '原密码错误' }), {
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                    }
+                }
+            }
+            return new Response(JSON.stringify({ code: 401, message: '未登录' }), {
+                headers: { 'Content-Type': 'application/json' }
+            });
+        }
+        
+        // 处理普通登录
         const form = await request.formData();
         const username = form.get('username');
         const password = form.get('password');
@@ -88,7 +121,7 @@ export async function onRequest({ request, env }) {
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:system-ui,sans-serif;background:#f5f5f5;padding:20px}
         .container{max-width:1200px;margin:0 auto}
-        .header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:20px;border-radius:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+        .header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;padding:20px;border-radius:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
         .card{background:white;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
         .card h2{margin-bottom:15px;border-left:4px solid #667eea;padding-left:15px}
         .form-group{margin-bottom:15px}
@@ -98,6 +131,7 @@ export async function onRequest({ request, env }) {
         .btn-danger{background:#e53e3e}
         .btn-success{background:#38a169}
         .btn-warning{background:#ed8936}
+        .btn-secondary{background:#718096}
         table{width:100%;border-collapse:collapse}
         th,td{padding:10px;text-align:left;border-bottom:1px solid #ddd}
         th{background:#f7fafc}
@@ -113,13 +147,17 @@ export async function onRequest({ request, env }) {
         .logo-section{background:#f7fafc;padding:15px;border-radius:8px;margin-bottom:20px}
         .logo-preview{display:flex;align-items:center;gap:15px;flex-wrap:wrap}
         .logo-preview img{max-width:200px;max-height:240px;width:auto;height:auto;object-fit:contain}
+        .header-buttons{display:flex;gap:10px}
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
         <h1>📚 书签管理后台</h1>
-        <form method="post" action="/logout"><button type="submit" style="background:rgba(255,255,255,0.2)">退出登录</button></form>
+        <div class="header-buttons">
+            <button id="changePwdBtn" style="background:rgba(255,255,255,0.2)">🔑 修改密码</button>
+            <form method="post" action="/logout" style="margin:0"><button type="submit" style="background:rgba(255,255,255,0.2)">退出登录</button></form>
+        </div>
     </div>
     
     <div class="card">
@@ -180,6 +218,30 @@ export async function onRequest({ request, env }) {
             <div class="form-group"><label>描述</label><textarea id="edit_desc" rows="2"></textarea></div>
             <div class="form-group"><label>排序</label><input type="number" id="edit_sort_order" value="9999"></div>
             <div class="form-actions"><button type="button" class="close-modal-btn" style="background:#a0aec0">取消</button><button type="submit" class="btn-success">保存修改</button></div>
+        </form>
+    </div>
+</div>
+
+<div id="changePwdModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header"><h3>🔑 修改密码</h3><span class="close-modal close-pwd-modal">&times;</span></div>
+        <form id="changePwdForm">
+            <div class="form-group">
+                <label>原密码 *</label>
+                <input type="password" id="old_password" required>
+            </div>
+            <div class="form-group">
+                <label>新密码 *</label>
+                <input type="password" id="new_password" required>
+            </div>
+            <div class="form-group">
+                <label>确认新密码 *</label>
+                <input type="password" id="confirm_password" required>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="close-pwd-btn" style="background:#a0aec0">取消</button>
+                <button type="submit" class="btn-success">确认修改</button>
+            </div>
         </form>
     </div>
 </div>
@@ -263,6 +325,53 @@ export async function onRequest({ request, env }) {
             return m;
         });
     }
+    
+    // 修改密码相关
+    const changePwdModal = document.getElementById('changePwdModal');
+    function openChangePwdModal() { changePwdModal.style.display = 'flex'; }
+    function closeChangePwdModal() { changePwdModal.style.display = 'none'; }
+    
+    document.getElementById('changePwdBtn').onclick = openChangePwdModal;
+    document.querySelector('.close-pwd-modal').onclick = closeChangePwdModal;
+    document.querySelector('.close-pwd-btn').onclick = closeChangePwdModal;
+    
+    document.getElementById('changePwdForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const oldPassword = document.getElementById('old_password').value;
+        const newPassword = document.getElementById('new_password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+        
+        if (newPassword !== confirmPassword) {
+            showMessage('两次输入的新密码不一致', 'error');
+            return;
+        }
+        if (newPassword.length < 4) {
+            showMessage('新密码长度至少4位', 'error');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('old_password', oldPassword);
+        formData.append('new_password', newPassword);
+        
+        const res = await fetch('/admin/change-password', { method: 'POST', body: formData });
+        const data = await res.json();
+        
+        if (data.code === 200) {
+            showMessage('密码修改成功，请重新登录', 'success');
+            setTimeout(() => {
+                window.location.href = '/logout';
+            }, 1500);
+        } else {
+            showMessage(data.message || '修改失败', 'error');
+        }
+    };
+    
+    window.onclick = (e) => { 
+        if (e.target === document.getElementById('editModal')) closeModal();
+        if (e.target === changePwdModal) closeChangePwdModal();
+    };
+    
     document.getElementById('addForm').onsubmit = async (e) => {
         e.preventDefault();
         const data = {
@@ -321,7 +430,7 @@ export async function onRequest({ request, env }) {
     };
     document.querySelector('.close-modal').onclick = closeModal;
     document.querySelector('.close-modal-btn').onclick = closeModal;
-    window.onclick = (e) => { if (e.target === document.getElementById('editModal')) closeModal(); };
+    
     loadLogo(); loadLogoLink(); loadSites();
 </script>
 </body>
