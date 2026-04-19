@@ -88,7 +88,7 @@ export async function onRequest({ env, request }) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>朱氏家族门户 - 旭儿导航</title>
+    <title>旭 儿</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#f7fafc;min-height:100vh}
@@ -144,7 +144,7 @@ export async function onRequest({ env, request }) {
     </div>
     <div class="main">
         <div class="header">
-            <h1 style="font-size: 60px;">朱  氏  家  族  门  户</h1>
+            <h1 style="font-size: 60px;">网 络 世 界</h1>
             <p style="font-size:16px;opacity:0.92;margin-top:8px">虚拟世界 · 无限可能 · 探索世界 · 充实人生</p>
             <div class="datetime"><span>北京时间 ${new Date().toLocaleString('zh-CN', {timeZone:'Asia/Shanghai', year:'numeric', month:'long', day:'numeric', weekday:'long'})}</span><span style="margin-left:10px">⏰ ${new Date().toLocaleString('zh-CN', {timeZone:'Asia/Shanghai', hour:'2-digit', minute:'2-digit', second:'2-digit'})}</span>  祝在此时此刻相遇的您：一生幸福平安 · 万事如意</div>
         </div>
