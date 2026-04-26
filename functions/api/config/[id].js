@@ -6,11 +6,11 @@ export async function onRequest({ request, env, params }) {
             const id = parseInt(params.id);
             
             let sites = [];
-            const data = await NAV_KV.get('sites');
+            const data = await env.NAV_KV.get('sites');
             if (data) sites = JSON.parse(data);
             
             const newSites = sites.filter(s => s.id !== id);
-            await NAV_KV.put('sites', JSON.stringify(newSites));
+            await env.NAV_KV.put('sites', JSON.stringify(newSites));
             
             return new Response(JSON.stringify({ code: 200, message: '删除成功' }), {
                 headers: { 'Content-Type': 'application/json' }
