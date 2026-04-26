@@ -167,10 +167,9 @@ export async function onRequest({ env, request }) {
 
 async function getSites(env) {
     try {
-        const data = await NAV_KV.get('sites');
+        const data = await env.NAV_KV.get('sites');
         if (data) {
             const sites = JSON.parse(data);
-            // 按sort_order升序排序
             sites.sort((a, b) => {
                 const orderA = a.sort_order !== undefined ? a.sort_order : 9999;
                 const orderB = b.sort_order !== undefined ? b.sort_order : 9999;
@@ -187,7 +186,7 @@ async function getSites(env) {
 
 async function getLogo(env) {
     try {
-        return await NAV_KV.get('site_logo') || '';
+        return await env.NAV_KV.get('site_logo') || '';
     } catch (e) {
         return '';
     }
@@ -195,7 +194,7 @@ async function getLogo(env) {
 
 async function getLogoLink(env) {
     try {
-        return await NAV_KV.get('site_logo_link') || '';
+        return await env.NAV_KV.get('site_logo_link') || '';
     } catch (e) {
         return '';
     }
@@ -203,7 +202,7 @@ async function getLogoLink(env) {
 
 async function getCategoryOrders(env) {
     try {
-        const data = await NAV_KV.get('category_orders');
+        const data = await env.NAV_KV.get('category_orders');
         return data ? new Map(JSON.parse(data)) : new Map();
     } catch (e) {
         return new Map();
