@@ -6,63 +6,45 @@ export async function onRequest({ request, env }) {
     const pathname = url.pathname;
     
     if (match) {
-        const session = await NAV_KV.get(`session:${match[1]}`);
+        const session = await env.NAV_KV.get(`session:${match[1]}`);
         isLoggedIn = session !== null;
     }
     
-    // 处理修改密码请求（放在最前面，优先匹配）
+    // 处理修改密码请求
     if (request.method === 'POST' && pathname === '/admin/change-password') {
-        const cookie = request.headers.get('Cookie') || '';
         const match = cookie.match(/admin_token=([^;]+)/);
         if (match) {
-            const session = await NAV_KV.get(`session:${match[1]}`);
+            const session = await env.NAV_KV.get(`session:${match[1]}`);
             if (session) {
                 const form = await request.formData();
                 const oldPassword = form.get('old_password');
                 const newPassword = form.get('new_password');
                 
-                const adminPass = await NAV_KV.get('admin_password') || 'admin123';
+                const adminPass = await env.NAV_KV.get('admin_password') || 'admin123';
                 
                 if (oldPassword === adminPass) {
-                    await NAV_KV.put('admin_password', newPassword);
-                    return new Response(JSON.stringify({ code: 200, message: '密码修改成功，请重新登录' }), {
-                        headers: { 'Content-Type': 'application/json' }
-                    });
+                    await env.NAV_KV.put('admin_password', newPassword);
+                    return Response.json({ code: 200, message: '密码修改成功，请重新登录' });
                 } else {
-                    return new Response(JSON.stringify({ code: 401, message: '原密码错误' }), {
-                        headers: { 'Content-Type': 'application/json' }
-                    });
+                    return Response.json({ code: 401, message: '原密码错误' });
                 }
             }
         }
-        return new Response(JSON.stringify({ code: 401, message: '未登录' }), {
-            headers: { 'Content-Type': 'application/json' }
-        });
+        return Response.json({ code: 401, message: '未登录' });
     }
     
-    // 处理退出登录
-    if (request.method === 'POST' && pathname === '/logout') {
-        if (match) {
-            await NAV_KV.delete(`session:${match[1]}`);
-        }
-        return new Response(null, {
-            status: 302,
-            headers: { 'Location': '/admin' }
-        });
-    }
-    
-    // 处理普通登录 POST（只有精确匹配 /admin 且不是修改密码时）
+    // 处理普通登录 POST
     if (request.method === 'POST' && pathname === '/admin') {
         const form = await request.formData();
         const username = form.get('username');
         const password = form.get('password');
         
-        const adminUser = await NAV_KV.get('admin_username') || 'admin';
-        const adminPass = await NAV_KV.get('admin_password') || 'admin123';
+        const adminUser = await env.NAV_KV.get('admin_username') || 'admin';
+        const adminPass = await env.NAV_KV.get('admin_password') || 'admin123';
         
         if (username === adminUser && password === adminPass) {
             const token = crypto.randomUUID();
-            await NAV_KV.put(`session:${token}`, 'active', { expirationTtl: 86400 });
+            await env.NAV_KV.put(`session:${token}`, 'active', { expirationTtl: 86400 });
             
             return new Response(null, {
                 status: 302,
@@ -77,7 +59,7 @@ export async function onRequest({ request, env }) {
         });
     }
     
-    // 未登录显示登录页（GET 请求或其它路径）
+    // 未登录显示登录页
     if (!isLoggedIn) {
         return new Response(`<!DOCTYPE html>
 <html lang="zh-CN">
@@ -166,7 +148,7 @@ export async function onRequest({ request, env }) {
         <h1>📚 书签管理后台</h1>
         <div class="header-buttons">
             <button id="changePwdBtn" style="background:rgba(255,255,255,0.2)">🔑 修改密码</button>
-            <form method="post" action="/logout" style="margin:0"><button type="submit" style="background:rgba(255,255,255,0.2)">退出登录</button></form>
+            <button id="logoutBtn" style="background:rgba(255,255,255,0.2)">退出登录</button>
         </div>
     </div>
     
@@ -335,6 +317,12 @@ export async function onRequest({ request, env }) {
             return m;
         });
     }
+    
+    // 退出登录
+    document.getElementById('logoutBtn').onclick = async () => {
+        await fetch('/logout', { method: 'POST' });
+        window.location.href = '/admin';
+    };
     
     // 修改密码相关
     const changePwdModal = document.getElementById('changePwdModal');
