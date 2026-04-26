@@ -2,7 +2,7 @@ export async function onRequest({ request, env }) {
     const cookie = request.headers.get('Cookie') || '';
     const match = cookie.match(/admin_token=([^;]+)/);
     if (match) {
-        await NAV_KV.delete(`session:${match[1]}`);
+        await env.NAV_KV.delete(`session:${match[1]}`);
     }
     
     return new Response(null, {
