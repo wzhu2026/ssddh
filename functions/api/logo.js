@@ -3,7 +3,7 @@ export async function onRequest({ request, env }) {
     
     if (method === 'GET') {
         try {
-            const logo = await NAV_KV.get('site_logo') || '';
+            const logo = await env.NAV_KV.get('site_logo') || '';
             return new Response(JSON.stringify({ code: 200, logo }), {
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -17,9 +17,9 @@ export async function onRequest({ request, env }) {
             const body = await request.json();
             const logo = body.logo || '';
             if (logo) {
-                await NAV_KV.put('site_logo', logo);
+                await env.NAV_KV.put('site_logo', logo);
             } else {
-                await NAV_KV.delete('site_logo');
+                await env.NAV_KV.delete('site_logo');
             }
             return new Response(JSON.stringify({ code: 200, message: '保存成功' }));
         } catch (e) {
