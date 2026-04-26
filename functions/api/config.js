@@ -6,14 +6,12 @@ export async function onRequest({ request, env }) {
     if (method === 'GET') {
         let sites = [];
         try {
-            const data = await NAV_KV.get('sites');
+            const data = await env.NAV_KV.get('sites');
             if (data) sites = JSON.parse(data);
-            // 按sort_order升序排序，数字小的在前
             sites.sort((a, b) => {
                 const orderA = a.sort_order !== undefined ? a.sort_order : 9999;
                 const orderB = b.sort_order !== undefined ? b.sort_order : 9999;
                 if (orderA !== orderB) return orderA - orderB;
-                // 如果sort_order相同，按id降序（新添加的在前）
                 return b.id - a.id;
             });
         } catch (e) {}
@@ -29,7 +27,7 @@ export async function onRequest({ request, env }) {
             const { name, url: siteUrl, catelog, logo, desc, sort_order } = body;
             
             let sites = [];
-            const data = await NAV_KV.get('sites');
+            const data = await env.NAV_KV.get('sites');
             if (data) sites = JSON.parse(data);
             
             const newId = sites.length ? Math.max(...sites.map(s => s.id)) + 1 : 1;
@@ -44,7 +42,6 @@ export async function onRequest({ request, env }) {
             };
             sites.push(newSite);
             
-            // 保存后排序
             sites.sort((a, b) => {
                 const orderA = a.sort_order !== undefined ? a.sort_order : 9999;
                 const orderB = b.sort_order !== undefined ? b.sort_order : 9999;
@@ -52,7 +49,7 @@ export async function onRequest({ request, env }) {
                 return b.id - a.id;
             });
             
-            await NAV_KV.put('sites', JSON.stringify(sites));
+            await env.NAV_KV.put('sites', JSON.stringify(sites));
             
             return new Response(JSON.stringify({ code: 201, message: '创建成功' }));
         } catch (e) {
@@ -68,7 +65,7 @@ export async function onRequest({ request, env }) {
             const { name, url: siteUrl, catelog, logo, desc, sort_order } = body;
             
             let sites = [];
-            const data = await NAV_KV.get('sites');
+            const data = await env.NAV_KV.get('sites');
             if (data) sites = JSON.parse(data);
             
             const index = sites.findIndex(s => s.id === id);
@@ -83,7 +80,6 @@ export async function onRequest({ request, env }) {
                     sort_order: sort_order !== undefined ? sort_order : 9999 
                 };
                 
-                // 保存后排序
                 sites.sort((a, b) => {
                     const orderA = a.sort_order !== undefined ? a.sort_order : 9999;
                     const orderB = b.sort_order !== undefined ? b.sort_order : 9999;
@@ -91,12 +87,34 @@ export async function onRequest({ request, env }) {
                     return b.id - a.id;
                 });
                 
-                await NAV_KV.put('sites', JSON.stringify(sites));
+                await env.NAV_KV.put('sites', JSON.stringify(sites));
             }
             
             return new Response(JSON.stringify({ code: 200, message: '更新成功' }));
         } catch (e) {
             return new Response(JSON.stringify({ code: 500, message: e.message }));
+        }
+    }
+    
+    // DELETE - 删除书签
+    if (method === 'DELETE') {
+        try {
+            const id = parseInt(url.pathname.split('/').pop());
+            
+            let sites = [];
+            const data = await env.NAV_KV.get('sites');
+            if (data) sites = JSON.parse(data);
+            
+            const newSites = sites.filter(s => s.id !== id);
+            await env.NAV_KV.put('sites', JSON.stringify(newSites));
+            
+            return new Response(JSON.stringify({ code: 200, message: '删除成功' }), {
+                headers: { 'Content-Type': 'application/json' }
+            });
+        } catch (e) {
+            return new Response(JSON.stringify({ code: 500, message: e.message }), {
+                headers: { 'Content-Type': 'application/json' }
+            });
         }
     }
     
