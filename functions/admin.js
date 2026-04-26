@@ -2,47 +2,57 @@ export async function onRequest({ request, env }) {
     const cookie = request.headers.get('Cookie') || '';
     const match = cookie.match(/admin_token=([^;]+)/);
     let isLoggedIn = false;
+    const url = new URL(request.url);
+    const pathname = url.pathname;
     
     if (match) {
         const session = await NAV_KV.get(`session:${match[1]}`);
         isLoggedIn = session !== null;
     }
     
-    // 处理登录 POST
-    if (request.method === 'POST') {
-        // 检查是否是修改密码的请求
-        const url = new URL(request.url);
-        if (url.pathname === '/admin/change-password') {
-            const cookie = request.headers.get('Cookie') || '';
-            const match = cookie.match(/admin_token=([^;]+)/);
-            if (match) {
-                const session = await NAV_KV.get(`session:${match[1]}`);
-                if (session) {
-                    const form = await request.formData();
-                    const oldPassword = form.get('old_password');
-                    const newPassword = form.get('new_password');
-                    
-                    const adminUser = await NAV_KV.get('admin_username') || 'admin';
-                    const adminPass = await NAV_KV.get('admin_password') || 'admin123';
-                    
-                    if (oldPassword === adminPass) {
-                        await NAV_KV.put('admin_password', newPassword);
-                        return new Response(JSON.stringify({ code: 200, message: '密码修改成功，请重新登录' }), {
-                            headers: { 'Content-Type': 'application/json' }
-                        });
-                    } else {
-                        return new Response(JSON.stringify({ code: 401, message: '原密码错误' }), {
-                            headers: { 'Content-Type': 'application/json' }
-                        });
-                    }
+    // 处理修改密码请求（放在最前面，优先匹配）
+    if (request.method === 'POST' && pathname === '/admin/change-password') {
+        const cookie = request.headers.get('Cookie') || '';
+        const match = cookie.match(/admin_token=([^;]+)/);
+        if (match) {
+            const session = await NAV_KV.get(`session:${match[1]}`);
+            if (session) {
+                const form = await request.formData();
+                const oldPassword = form.get('old_password');
+                const newPassword = form.get('new_password');
+                
+                const adminPass = await NAV_KV.get('admin_password') || 'admin123';
+                
+                if (oldPassword === adminPass) {
+                    await NAV_KV.put('admin_password', newPassword);
+                    return new Response(JSON.stringify({ code: 200, message: '密码修改成功，请重新登录' }), {
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                } else {
+                    return new Response(JSON.stringify({ code: 401, message: '原密码错误' }), {
+                        headers: { 'Content-Type': 'application/json' }
+                    });
                 }
             }
-            return new Response(JSON.stringify({ code: 401, message: '未登录' }), {
-                headers: { 'Content-Type': 'application/json' }
-            });
         }
-        
-        // 处理普通登录
+        return new Response(JSON.stringify({ code: 401, message: '未登录' }), {
+            headers: { 'Content-Type': 'application/json' }
+        });
+    }
+    
+    // 处理退出登录
+    if (request.method === 'POST' && pathname === '/logout') {
+        if (match) {
+            await NAV_KV.delete(`session:${match[1]}`);
+        }
+        return new Response(null, {
+            status: 302,
+            headers: { 'Location': '/admin' }
+        });
+    }
+    
+    // 处理普通登录 POST（只有精确匹配 /admin 且不是修改密码时）
+    if (request.method === 'POST' && pathname === '/admin') {
         const form = await request.formData();
         const username = form.get('username');
         const password = form.get('password');
@@ -67,7 +77,7 @@ export async function onRequest({ request, env }) {
         });
     }
     
-    // 未登录显示登录页
+    // 未登录显示登录页（GET 请求或其它路径）
     if (!isLoggedIn) {
         return new Response(`<!DOCTYPE html>
 <html lang="zh-CN">
